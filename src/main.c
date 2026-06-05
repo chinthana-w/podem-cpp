@@ -3,10 +3,35 @@
 Command Instructions
 ***************************************************************************************************/
 //To Compile: make
-//To Run: ./project c17.isc 
+//To Run: ./project c17.isc c17.podem
 /***************************************************************************************************
  Main Function
 ***************************************************************************************************/
+FILE *OpenIscFile(char *f_name)
+{
+FILE *fp;
+char path[Mlin];
+
+if(strchr(f_name,'/')!=NULL){
+  return fopen(f_name,"r");
+}
+snprintf(path,sizeof(path),"data/isc/%s",f_name);
+fp=fopen(path,"r");
+if(fp!=NULL){ return fp; }
+return fopen(f_name,"r");
+}
+
+FILE *OpenOutFile(char *f_name)
+{
+char path[Mlin];
+
+if(strchr(f_name,'/')!=NULL){
+  return fopen(f_name,"w");
+}
+snprintf(path,sizeof(path),"data/out/%s",f_name);
+return fopen(path,"w");
+}
+
 int main(int argc,char **argv)
 {
 FILE *Isc,*Pat,*Res;                  //File pointers used for .isc, .pattern, and .res files
@@ -16,12 +41,20 @@ clock_t Start,End;                    //Clock variables to calculate the Cputime
 double Cpu;                           //Total cpu time
 int i,j;                              //Temporary variables
 
+if(argc<3){
+  printf("Usage: ./project <isc_file> <output_file>\n");
+  return 1;
+}
 
 
 
 /****************PART 1.-Read the .isc file and store the information in Node structure***********/
 Npi=Npo=Tgat=0;                                //Intialize values of all variables
-Isc=fopen(argv[1],"r");                        //File pointer to open .isc file 
+Isc=OpenIscFile(argv[1]);                      //File pointer to open .isc file
+if(Isc==NULL){
+  printf("Unable to open isc file: %s\n",argv[1]);
+  return 1;
+}
 Node=(GATE *) malloc(Mnod * sizeof(GATE));     //Dynamic memory allocation for Node structure
 Tgat=ReadIsc(Isc,Node);                        //Read .isc file and return index of last node
 fclose(Isc);                                   //Close file pointer for .isc file
@@ -43,7 +76,11 @@ printf("Total no of gates: %d\n",Tgat);        //Print the total no of gates
 
 int node_index = 0;
 GV_pair fault;
-FILE *ptrn_result = fopen(argv[2], "w");
+FILE *ptrn_result = OpenOutFile(argv[2]);
+if(ptrn_result==NULL){
+    printf("Unable to open output file: %s\n",argv[2]);
+    return 1;
+}
 
 int success_count = 0;
 int untestable_count = 0;
@@ -107,4 +144,3 @@ fprintf(ptrn_result, "Timeout: %.2f%%\n", timeout);
 fclose(ptrn_result);
 }//end of main
 /****************************************************************************************************************************/
-
